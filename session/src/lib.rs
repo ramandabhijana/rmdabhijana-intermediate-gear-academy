@@ -55,3 +55,21 @@ extern "C" fn handle() {
         Action::CheckGameStatus => todo!(),
     }
 }
+
+#[no_mangle]
+extern "C" fn handle_reply() {
+    // which message was replied to
+    let reply_message_id = msg::reply_to().expect("Failed to query reply_to data");
+
+    let session = unsafe { SESSION.as_mut().expect("The session is not initialized") };
+
+    /*
+    TODO: Process and store the result depending on the reply
+        If a `GameStarted` response is received, it updates the game status to indicate that the game was successfully started.
+        If a `WordChecked` response is received, it saves the response, increments the number of tries, and checks if the word was guessed.
+        If the word has been guessed, it switches the game status to `GameOver(Win)`.
+        If all attempts are used up and the word is not guessed, it switches the game status to `GameOver(Lose)`.
+
+    TODO: Call `wake()` to acknowledge the response
+    */
+}
