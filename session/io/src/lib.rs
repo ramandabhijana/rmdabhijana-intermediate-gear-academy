@@ -16,6 +16,7 @@ impl Metadata for SessionMetadata {
 pub enum Action {
     StartGame { user: ActorId },
     CheckWord { user: ActorId, word: String },
+    CheckGameStatus,
 }
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
