@@ -20,6 +20,12 @@ pub enum Action {
 }
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+pub enum GameStatus {
+    Win,
+    Lose,
+}
+
+#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
 pub enum Event {
     GameStarted {
         user: ActorId,
@@ -29,5 +35,6 @@ pub enum Event {
         correct_positions: Vec<u8>,
         contained_in_word: Vec<u8>,
     },
+    GameOver(GameStatus),
     MessageSent,
 }
