@@ -1,16 +1,20 @@
 #![no_std]
-use gstd::{msg, prelude::*, ActorId};
+use gstd::{collections::BTreeMap, exec, msg, prelude::*, ActorId, MessageId};
 use session_io::*;
 
 static mut SESSION: Option<Session> = None;
 
 struct Session {
-    target_program_id: ActorId,
+    pub target_program_id: ActorId,
+    pub players: BTreeMap<ActorId, PlayerInfo>,
 }
 
 impl Session {
     pub fn new(target_program_id: ActorId) -> Self {
-        Self { target_program_id }
+        Self {
+            target_program_id,
+            players: BTreeMap::new(),
+        }
     }
 
     pub fn start_game(&mut self, user: ActorId) {
@@ -41,7 +45,7 @@ impl Session {
 #[no_mangle]
 extern "C" fn init() {
     let target_program_id = msg::load().expect("Could not decode target program ID");
-    unsafe { SESSION = Some(Session { target_program_id }) }
+    unsafe { SESSION = Some(Session::new(target_program_id)) }
 }
 
 #[no_mangle]
@@ -72,4 +76,18 @@ extern "C" fn handle_reply() {
 
     TODO: Call `wake()` to acknowledge the response
     */
+
+#[no_mangle]
+extern "C" fn state() {
+    let session = unsafe { SESSION.take().expect("Unititialized Session state") };
+    msg::reply::<State>(session.into(), 0).expect("Failed to share state");
+}
+
+impl From<Session> for State {
+    fn from(value: Session) -> Self {
+        Self {
+            target_program_id: value.target_program_id,
+            players: value.players.clone(),
+        }
+    }
 }

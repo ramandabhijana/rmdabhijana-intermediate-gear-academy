@@ -1,6 +1,6 @@
 #![no_std]
-use gmeta::{InOut, Metadata};
-use gstd::{prelude::*, ActorId};
+use gmeta::{InOut, Metadata, Out};
+use gstd::{collections::BTreeMap, prelude::*, ActorId, MessageId};
 
 pub struct SessionMetadata;
 impl Metadata for SessionMetadata {
@@ -9,7 +9,7 @@ impl Metadata for SessionMetadata {
     type Others = ();
     type Reply = ();
     type Signal = ();
-    type State = ();
+    type State = Out<State>;
 }
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
@@ -35,6 +35,25 @@ pub enum Event {
         correct_positions: Vec<u8>,
         contained_in_word: Vec<u8>,
     },
-    GameOver(GameStatus),
+    GameOver {
+        user: ActorId,
+        status: GameStatus,
+    },
     MessageSent,
+}
+
+type SentMessageId = MessageId;
+type OriginalMessageId = MessageId;
+
+#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+pub struct PlayerInfo {
+    game_status: Option<GameStatus>,
+    attempts_count: u32,
+    msg_ids: (SentMessageId, OriginalMessageId),
+}
+
+#[derive(Debug, Default, Clone, Encode, Decode, TypeInfo)]
+pub struct State {
+    pub target_program_id: ActorId,
+    pub players: BTreeMap<ActorId, PlayerInfo>,
 }
