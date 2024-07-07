@@ -76,6 +76,7 @@ extern "C" fn handle_reply() {
 
     TODO: Call `wake()` to acknowledge the response
     */
+}
 
 #[no_mangle]
 extern "C" fn state() {
