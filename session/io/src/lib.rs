@@ -16,13 +16,20 @@ impl Metadata for SessionMetadata {
 pub enum Action {
     StartGame { user: ActorId },
     CheckWord { user: ActorId, word: String },
-    CheckGameStatus,
+    CheckGameStatus { user: ActorId },
+}
+
+#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+pub enum GameOverStatus {
+    Win,
+    Lose,
 }
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
 pub enum GameStatus {
-    Win,
-    Lose,
+    Idle,
+    InProgress,
+    Completed(GameOverStatus),
 }
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
@@ -37,7 +44,7 @@ pub enum Event {
     },
     GameOver {
         user: ActorId,
-        status: GameStatus,
+        status: GameOverStatus,
     },
     MessageSent,
 }
@@ -47,9 +54,19 @@ type OriginalMessageId = MessageId;
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
 pub struct PlayerInfo {
-    game_status: Option<GameStatus>,
+    game_status: GameStatus,
     attempts_count: u32,
     msg_ids: (SentMessageId, OriginalMessageId),
+}
+
+impl PlayerInfo {
+    pub fn new(msg_ids: (SentMessageId, OriginalMessageId)) -> Self {
+        Self {
+            game_status: GameStatus::Idle,
+            attempts_count: 0,
+            msg_ids,
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone, Encode, Decode, TypeInfo)]
