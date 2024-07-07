@@ -1,8 +1,11 @@
 #![no_std]
 use gstd::{collections::BTreeMap, exec, msg, prelude::*, ActorId, MessageId};
 use session_io::*;
+use wordle_io::Event as WordleEvent;
 
 static mut SESSION: Option<Session> = None;
+
+const DELAY_CHECK_STATUS_DURATION: u32 = 200;
 
 struct Session {
     pub target_program_id: ActorId,
@@ -19,14 +22,39 @@ impl Session {
 
     pub fn start_game(&mut self, user: ActorId) {
         // Check if a game already exists for the user
+        if self.players.get(&user).is_some() {
+            assert!(
+                msg::source() == exec::program_id(),
+                "Game already exists for this user"
+            );
+
+            msg::reply(Event::GameStarted { user }, 0).expect("Error in sending reply");
+            return;
+        }
 
         // Send `StartGame` message to Wordle program
+        let sent_msg_id = msg::send(self.target_program_id, Action::StartGame { user }, 0)
+            .expect("Error in sending message");
 
         // Wait for the response
+        exec::wait();
+
+        let original_msg_id = msg::id();
+
+        self.players
+            .insert(user, PlayerInfo::new((sent_msg_id, original_msg_id)));
 
         // Send a delayed message with `CheckGameStatus` action to monitor game's progress
+        msg::send_delayed(
+            exec::program_id(),
+            Action::CheckGameStatus { user },
+            0,
+            DELAY_CHECK_STATUS_DURATION,
+        )
+        .expect("Error in sending delayed message");
 
         // Notify that the game has been successfully started
+        msg::reply(Event::MessageSent, 0).expect("Error in sending a reply");
     }
 
     pub fn check_word(&mut self, user: ActorId, word: String) {
@@ -40,6 +68,17 @@ impl Session {
 
         // Notify that the move was successful
     }
+
+    pub fn handle_game_started(&mut self, user: ActorId) -> MessageId {
+        let player = self
+            .players
+            .get_mut(&user)
+            .expect("Game does not exist for the player");
+        player.start_game();
+        let (_, original_msg_id) = player.msg_ids;
+        original_msg_id
+    }
+
 }
 
 #[no_mangle]
@@ -56,7 +95,7 @@ extern "C" fn handle() {
     match action {
         Action::StartGame { user } => session.start_game(user),
         Action::CheckWord { user, word } => session.check_word(user, word),
-        Action::CheckGameStatus => todo!(),
+        Action::CheckGameStatus { user } => todo!(),
     }
 }
 
@@ -76,6 +115,21 @@ extern "C" fn handle_reply() {
 
     TODO: Call `wake()` to acknowledge the response
     */
+
+    // It may be important to add check so only when source is target program will go through
+
+    let reply_message = msg::load::<WordleEvent>().expect("Unable to decode WordleEvent");
+
+    let original_message_id = match reply_message {
+        WordleEvent::GameStarted { user } => session.handle_game_started(user),
+        WordleEvent::WordChecked {
+            user,
+            correct_positions,
+            contained_in_word,
+        } => todo!(),
+    };
+
+    exec::wake(original_message_id).expect("Failed to wake message");
 }
 
 #[no_mangle]

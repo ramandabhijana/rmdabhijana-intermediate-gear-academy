@@ -3875,6 +3875,7 @@ dependencies = [
  "gstd",
  "gtest",
  "session-io",
+ "wordle-io",
 ]
 
 [[package]]

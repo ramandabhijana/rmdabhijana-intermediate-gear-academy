@@ -19,13 +19,13 @@ pub enum Action {
     CheckGameStatus { user: ActorId },
 }
 
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
 pub enum GameOverStatus {
     Win,
     Lose,
 }
 
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
 pub enum GameStatus {
     Idle,
     InProgress,
@@ -54,9 +54,9 @@ type OriginalMessageId = MessageId;
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
 pub struct PlayerInfo {
-    game_status: GameStatus,
-    attempts_count: u32,
-    msg_ids: (SentMessageId, OriginalMessageId),
+    pub game_status: GameStatus,
+    pub attempts_count: u32,
+    pub msg_ids: (SentMessageId, OriginalMessageId),
 }
 
 impl PlayerInfo {
@@ -66,6 +66,11 @@ impl PlayerInfo {
             attempts_count: 0,
             msg_ids,
         }
+    }
+
+    pub fn start_game(&mut self) {
+        assert_eq!(self.game_status, GameStatus::Idle);
+        self.game_status = GameStatus::InProgress;
     }
 }
 
