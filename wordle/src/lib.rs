@@ -33,15 +33,15 @@ extern "C" fn handle() {
             Event::GameStarted { user }
         }
         Action::CheckWord { user, word } => {
-            if word.len() != 5 {
-                panic!("The length of the word exceeds 5");
+            if word.len() != WORD_LENGTH {
+                panic!("The length of the word exceeds {}", WORD_LENGTH);
             }
             let key_word = wordle
                 .games
                 .get(&user)
                 .expect("There is no game with this user");
-            let mut matched_indices = Vec::with_capacity(5);
-            let mut key_indices = Vec::with_capacity(5);
+            let mut matched_indices = Vec::with_capacity(WORD_LENGTH);
+            let mut key_indices = Vec::with_capacity(WORD_LENGTH);
             for (i, (a, b)) in key_word.chars().zip(word.chars()).enumerate() {
                 if a == b {
                     matched_indices.push(i as u8);

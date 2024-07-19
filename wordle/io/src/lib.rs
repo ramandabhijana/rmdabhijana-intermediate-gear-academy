@@ -29,3 +29,6 @@ pub enum Event {
         contained_in_word: Vec<u8>,
     },
 }
+
+pub const WORD_LENGTH: usize = 5;
+
