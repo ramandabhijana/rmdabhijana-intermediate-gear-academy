@@ -61,21 +61,29 @@ type OriginalMessageId = MessageId;
 pub struct PlayerInfo {
     pub game_status: GameStatus,
     pub attempts_count: u32,
-    pub msg_ids: (SentMessageId, OriginalMessageId),
+    msg_ids: (SentMessageId, OriginalMessageId),
 }
 
 impl PlayerInfo {
-    pub fn new(msg_ids: (SentMessageId, OriginalMessageId)) -> Self {
+    pub fn new(sent_msg_id: SentMessageId, original_msg_id: OriginalMessageId) -> Self {
         Self {
             game_status: GameStatus::Idle,
             attempts_count: 0,
-            msg_ids,
+            msg_ids: (sent_msg_id, original_msg_id),
         }
     }
 
     pub fn start_game(&mut self) {
         assert_eq!(self.game_status, GameStatus::Idle);
         self.game_status = GameStatus::InProgress;
+    }
+
+    pub fn sent_msg_id(&self) -> SentMessageId {
+        self.msg_ids.0
+    }
+
+    pub fn original_msg_id(&self) -> OriginalMessageId {
+        self.msg_ids.1
     }
 }
 

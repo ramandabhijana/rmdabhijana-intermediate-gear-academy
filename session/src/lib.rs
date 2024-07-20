@@ -42,7 +42,7 @@ impl Session {
         let original_msg_id = msg::id();
 
         self.players
-            .insert(user, PlayerInfo::new((sent_msg_id, original_msg_id)));
+            .insert(user, PlayerInfo::new(sent_msg_id, original_msg_id));
 
         // Send a delayed message with `CheckGameStatus` action to monitor game's progress
         msg::send_delayed(
@@ -67,16 +67,6 @@ impl Session {
         // Wait for the response
 
         // Notify that the move was successful
-    }
-
-    pub fn handle_game_started(&mut self, user: ActorId) -> MessageId {
-        let player = self
-            .players
-            .get_mut(&user)
-            .expect("Game does not exist for the player");
-        player.start_game();
-        let (_, original_msg_id) = player.msg_ids;
-        original_msg_id
     }
 
     pub fn get_info(&self, user: &ActorId) -> PlayerInfo {
@@ -117,7 +107,8 @@ extern "C" fn handle_reply() {
     let user: ActorId = reply_message.clone().into();
 
     let player_info = session.get_info(&user);
-    let (sent_message_id, original_message_id) = player_info.msg_ids;
+    let sent_message_id = player_info.sent_msg_id();
+    let original_message_id = player_info.original_msg_id();
 
     if reply_message_id == sent_message_id {
         let game_status: GameStatus = reply_message.into();
