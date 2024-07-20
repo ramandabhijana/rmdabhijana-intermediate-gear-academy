@@ -1,7 +1,7 @@
 #![no_std]
 use gstd::{collections::BTreeMap, exec, msg, prelude::*, ActorId, MessageId};
 use session_io::*;
-use wordle_io::Event as WordleEvent;
+use wordle_io::{Action as WordleAction, Event as WordleEvent};
 
 static mut SESSION: Option<Session> = None;
 
@@ -33,7 +33,7 @@ impl Session {
         }
 
         // Send `StartGame` message to Wordle program
-        let sent_msg_id = msg::send(self.target_program_id, Action::StartGame { user }, 0)
+        let sent_msg_id = msg::send(self.target_program_id, WordleAction::StartGame { user }, 0)
             .expect("Error in sending message");
 
         // Wait for the response
