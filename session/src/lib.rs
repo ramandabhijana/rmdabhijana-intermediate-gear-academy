@@ -1,5 +1,6 @@
 #![no_std]
 use gstd::{collections::BTreeMap, exec, msg, prelude::*, ActorId, MessageId};
+use ops::Not;
 use session_io::*;
 use wordle_io::{Action as WordleAction, Event as WordleEvent};
 
@@ -21,15 +22,22 @@ impl Session {
     }
 
     pub fn start_game(&mut self, user: ActorId) {
-        // Check if a game already exists for the user
-        if self.players.get(&user).is_some() {
+        if let Some(player) = self.players.get(&user) {
+            // ensure the game is not progressing
             assert!(
-                msg::source() == exec::program_id(),
-                "Game already exists for this user"
+                matches!(
+                    player.game_status,
+                    GameStatus::InProgress | GameStatus::CheckingWord
+                )
+                .not(),
+                "A game is in progress for this user"
             );
 
-            msg::reply(Event::GameStarted { user }, 0).expect("Error in sending reply");
-            return;
+            if player.game_status == GameStatus::Started {
+                self.set_game_status(&user, GameStatus::InProgress);
+                msg::reply(Event::GameStarted { user }, 0).expect("Error in sending reply");
+                return;
+            }
         }
 
         // Send `StartGame` message to Wordle program
