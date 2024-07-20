@@ -1,6 +1,7 @@
 #![no_std]
 use gmeta::{InOut, Metadata, Out};
 use gstd::{collections::BTreeMap, prelude::*, ActorId, MessageId};
+use wordle_io::{Event as WordleEvent, WORD_LENGTH};
 
 pub struct SessionMetadata;
 impl Metadata for SessionMetadata {
@@ -28,6 +29,10 @@ pub enum GameOverStatus {
 #[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
 pub enum GameStatus {
     Idle,
+    Starting,
+    Started,
+    CheckingWord,
+    WordChecked(bool),
     InProgress,
     Completed(GameOverStatus),
 }
@@ -78,4 +83,18 @@ impl PlayerInfo {
 pub struct State {
     pub target_program_id: ActorId,
     pub players: BTreeMap<ActorId, PlayerInfo>,
+}
+
+impl Into<GameStatus> for WordleEvent {
+    fn into(self) -> GameStatus {
+        match self {
+            WordleEvent::GameStarted { .. } => GameStatus::Started,
+            WordleEvent::WordChecked {
+                correct_positions, ..
+            } => {
+                let guessed = correct_positions.len() == WORD_LENGTH;
+                GameStatus::WordChecked(guessed)
+            }
+        }
+    }
 }
