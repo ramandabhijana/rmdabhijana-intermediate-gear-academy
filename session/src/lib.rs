@@ -69,6 +69,12 @@ impl Session {
         // Notify that the move was successful
     }
 
+    pub fn set_game_status(&mut self, user: &ActorId, status: GameStatus) {
+        self.players.entry(*user).and_modify(|info| {
+            info.game_status = status;
+        });
+    }
+
     pub fn get_info(&self, user: &ActorId) -> PlayerInfo {
         let info = self
             .players
