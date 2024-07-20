@@ -96,8 +96,8 @@ extern "C" fn handle() {
     let session = unsafe { SESSION.as_mut().expect("Session is not initialized") };
 
     match action {
-        Action::StartGame { user } => session.start_game(user),
-        Action::CheckWord { user, word } => session.check_word(user, word),
+        Action::StartGame => session.start_game(msg::source()),
+        Action::CheckWord { word } => session.check_word(msg::source(), word),
         Action::CheckGameStatus { user } => todo!(),
     }
 }
