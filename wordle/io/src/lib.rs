@@ -32,3 +32,11 @@ pub enum Event {
 
 pub const WORD_LENGTH: usize = 5;
 
+impl Into<ActorId> for Event {
+    fn into(self) -> ActorId {
+        match self {
+            Event::GameStarted { user } => user,
+            Event::WordChecked { user, .. } => user,
+        }
+    }
+}

@@ -79,6 +79,13 @@ impl Session {
         original_msg_id
     }
 
+    pub fn get_info(&self, user: &ActorId) -> PlayerInfo {
+        let info = self
+            .players
+            .get(user)
+            .expect("Game does not exist for the player");
+        info.clone()
+    }
 }
 
 #[no_mangle]
@@ -101,35 +108,24 @@ extern "C" fn handle() {
 
 #[no_mangle]
 extern "C" fn handle_reply() {
-    // which message was replied to
     let reply_message_id = msg::reply_to().expect("Failed to query reply_to data");
 
     let session = unsafe { SESSION.as_mut().expect("The session is not initialized") };
 
-    /*
-    TODO: Process and store the result depending on the reply
-        If a `GameStarted` response is received, it updates the game status to indicate that the game was successfully started.
-        If a `WordChecked` response is received, it saves the response, increments the number of tries, and checks if the word was guessed.
-        If the word has been guessed, it switches the game status to `GameOver(Win)`.
-        If all attempts are used up and the word is not guessed, it switches the game status to `GameOver(Lose)`.
-
-    TODO: Call `wake()` to acknowledge the response
-    */
-
-    // It may be important to add check so only when source is target program will go through
-
     let reply_message = msg::load::<WordleEvent>().expect("Unable to decode WordleEvent");
 
-    let original_message_id = match reply_message {
-        WordleEvent::GameStarted { user } => session.handle_game_started(user),
-        WordleEvent::WordChecked {
-            user,
-            correct_positions,
-            contained_in_word,
-        } => todo!(),
-    };
+    let user: ActorId = reply_message.clone().into();
 
-    exec::wake(original_message_id).expect("Failed to wake message");
+    let player_info = session.get_info(&user);
+    let (sent_message_id, original_message_id) = player_info.msg_ids;
+
+    if reply_message_id == sent_message_id {
+        let game_status: GameStatus = reply_message.into();
+
+        session.set_game_status(&user, game_status);
+
+        exec::wake(original_message_id).expect("Failed to wake message");
+    }
 }
 
 #[no_mangle]
