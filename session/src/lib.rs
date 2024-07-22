@@ -43,10 +43,6 @@ impl Session {
         // Send `StartGame` message to Wordle program
         let sent_msg_id = msg::send(self.target_program_id, WordleAction::StartGame { user }, 0)
             .expect("Error in sending message");
-
-        // Wait for the response
-        exec::wait();
-
         let original_msg_id = msg::id();
 
         self.players
@@ -61,8 +57,8 @@ impl Session {
         )
         .expect("Error in sending delayed message");
 
-        // Notify that the game has been successfully started
-        msg::reply(Event::MessageSent, 0).expect("Error in sending a reply");
+        // Wait for the response
+        exec::wait();
     }
 
     pub fn check_word(&mut self, user: ActorId, word: String) {

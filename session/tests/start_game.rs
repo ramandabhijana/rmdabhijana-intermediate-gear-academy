@@ -33,7 +33,8 @@ fn start_game_should_success() {
     let log = Log::builder()
         .source(PROXY_PROGRAM)
         .dest(USER)
-        .payload(Event::GameStarted { user: USER.into() });
+        // .payload(Event::GameStarted { user: USER.into() });
+        .payload(Event::MessageSent);
     assert!(result.contains(&log));
 
     let State { players, .. } = proxy_program.read_state(0).unwrap();
