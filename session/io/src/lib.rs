@@ -28,7 +28,6 @@ pub enum GameOverStatus {
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
 pub enum GameStatus {
-    Idle,
     Starting,
     Started,
     CheckingWord,
@@ -67,15 +66,10 @@ pub struct PlayerInfo {
 impl PlayerInfo {
     pub fn new(sent_msg_id: SentMessageId, original_msg_id: OriginalMessageId) -> Self {
         Self {
-            game_status: GameStatus::Idle,
+            game_status: GameStatus::Starting,
             attempts_count: 0,
             msg_ids: (sent_msg_id, original_msg_id),
         }
-    }
-
-    pub fn start_game(&mut self) {
-        assert_eq!(self.game_status, GameStatus::Idle);
-        self.game_status = GameStatus::InProgress;
     }
 
     pub fn sent_msg_id(&self) -> SentMessageId {
