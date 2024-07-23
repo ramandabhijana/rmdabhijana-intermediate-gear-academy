@@ -79,6 +79,10 @@ impl PlayerInfo {
     pub fn original_msg_id(&self) -> OriginalMessageId {
         self.msg_ids.1
     }
+
+    pub fn set_msg_ids(&mut self, sent_msg_id: SentMessageId, original_msg_id: OriginalMessageId) {
+        self.msg_ids = (sent_msg_id, original_msg_id);
+    }
 }
 
 #[derive(Debug, Default, Clone, Encode, Decode, TypeInfo)]

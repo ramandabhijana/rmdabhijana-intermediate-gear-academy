@@ -62,20 +62,58 @@ impl Session {
     }
 
     pub fn check_word(&mut self, user: ActorId, word: String) {
+        let player = self
+            .players
+            .get(&user)
+            .expect("Game does not exist for the user");
+
         // Ensure the game exists and is in correct status
+        assert!(
+            matches!(
+                player.game_status,
+                GameStatus::Starting | GameStatus::Started | GameStatus::Completed(..)
+            )
+            .not(),
+            "Game is not available to play"
+        );
+
+        if let GameStatus::WordChecked(is_guessed) = player.game_status {
+            // handle when got reply from target program
+            return;
+        }
 
         // Validate the submitted word is in lowercase and is 5 character long
+        assert!(
+            word.len() == wordle_io::WORD_LENGTH,
+            "Word must be 5 character long"
+        );
+        assert!(
+            word.chars().all(|c| c.is_lowercase()),
+            "Word must be lowercased"
+        );
 
         // Send `CheckWord` message to wordle program
+        let sent_msg_id = msg::send(
+            self.target_program_id,
+            WordleAction::CheckWord { user, word },
+            0,
+        )
+        .expect("Error in sending message");
+        self.set_msg_ids(&user, sent_msg_id, msg::id());
+        self.set_game_status(&user, GameStatus::CheckingWord);
 
-        // Wait for the response
-
-        // Notify that the move was successful
+        exec::wait();
     }
 
     pub fn set_game_status(&mut self, user: &ActorId, status: GameStatus) {
         self.players.entry(*user).and_modify(|info| {
             info.game_status = status;
+        });
+    }
+
+    fn set_msg_ids(&mut self, user: &ActorId, sent_msg_id: MessageId, original_msg_id: MessageId) {
+        self.players.entry(*user).and_modify(|info| {
+            info.set_msg_ids(sent_msg_id, original_msg_id);
         });
     }
 
