@@ -77,7 +77,12 @@ impl Session {
             "Game is not available to play"
         );
 
-        if let GameStatus::WordChecked(is_guessed) = player.game_status {
+        if let GameStatus::WordChecked {
+            correct_positions,
+            contained_in_word,
+            is_guessed,
+        } = &player.game_status
+        {
             // handle when got reply from target program
             return;
         }

@@ -31,7 +31,11 @@ pub enum GameStatus {
     Starting,
     Started,
     CheckingWord,
-    WordChecked(bool),
+    WordChecked {
+        correct_positions: Vec<u8>,
+        contained_in_word: Vec<u8>,
+        is_guessed: bool,
+    },
     InProgress,
     Completed(GameOverStatus),
 }
@@ -96,10 +100,16 @@ impl Into<GameStatus> for WordleEvent {
         match self {
             WordleEvent::GameStarted { .. } => GameStatus::Started,
             WordleEvent::WordChecked {
-                correct_positions, ..
+                correct_positions,
+                contained_in_word,
+                ..
             } => {
-                let guessed = correct_positions.len() == WORD_LENGTH;
-                GameStatus::WordChecked(guessed)
+                let is_guessed = correct_positions.len() == WORD_LENGTH;
+                GameStatus::WordChecked {
+                    correct_positions,
+                    contained_in_word,
+                    is_guessed,
+                }
             }
         }
     }
