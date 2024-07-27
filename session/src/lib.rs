@@ -1,6 +1,5 @@
 #![no_std]
 use gstd::{collections::BTreeMap, exec, msg, prelude::*, ActorId, MessageId};
-use ops::Not;
 use session_io::*;
 use wordle_io::{Action as WordleAction, Event as WordleEvent};
 
@@ -28,13 +27,7 @@ impl Session {
     pub fn start_game(&mut self, user: ActorId) {
         if let Some(player) = self.players.get_mut(&user) {
             // ensure the game is not progressing
-            assert!(
-                matches!(
-                    player.game_status,
-                    GameStatus::Started | GameStatus::Completed(..)
-                ),
-                "A game is in progress for this user"
-            );
+            assert!(!player.is_playing(), "A game is in progress for this user");
 
             if player.game_status == GameStatus::Started {
                 return Self::set_status_and_reply(
@@ -76,14 +69,7 @@ impl Session {
             .expect("Game does not exist for the user");
 
         // Ensure the game exists and is in correct status
-        assert!(
-            matches!(
-                player.game_status,
-                GameStatus::Starting | GameStatus::Started | GameStatus::Completed(..)
-            )
-            .not(),
-            "Game is not available to play"
-        );
+        assert!(player.is_playing(), "Game is not available to play");
 
         if let GameStatus::WordChecked {
             correct_positions,

@@ -86,6 +86,13 @@ impl PlayerInfo {
     pub fn increment_attempt(&mut self) {
         self.attempts_count += 1;
     }
+
+    pub fn is_playing(&self) -> bool {
+        matches!(
+            self.game_status,
+            GameStatus::CheckingWord | GameStatus::WordChecked { .. } | GameStatus::InProgress
+        )
+    }
 }
 
 #[derive(Debug, Default, Clone, Encode, Decode, TypeInfo)]
