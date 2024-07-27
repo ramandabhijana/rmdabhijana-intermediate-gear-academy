@@ -31,9 +31,8 @@ impl Session {
             assert!(
                 matches!(
                     player.game_status,
-                    GameStatus::InProgress | GameStatus::CheckingWord
-                )
-                .not(),
+                    GameStatus::Started | GameStatus::Completed(..)
+                ),
                 "A game is in progress for this user"
             );
 
