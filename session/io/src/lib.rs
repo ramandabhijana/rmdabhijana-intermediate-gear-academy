@@ -84,7 +84,6 @@ impl PlayerInfo {
     pub fn increment_attempt(&mut self) {
         self.attempts_count += 1;
     }
-
 }
 
 #[derive(Debug, Default, Clone, Encode, Decode, TypeInfo)]

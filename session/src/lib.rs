@@ -1,5 +1,5 @@
 #![no_std]
-use gstd::{collections::BTreeMap, exec, msg, prelude::*, ActorId, MessageId};
+use gstd::{collections::BTreeMap, exec, msg, prelude::*, ActorId};
 use ops::Not;
 use session_io::*;
 use wordle_io::{Action as WordleAction, Event as WordleEvent};
@@ -26,7 +26,7 @@ impl Session {
     }
 
     pub fn start_game(&mut self, user: ActorId) {
-        if let Some(player) = self.players.get(&user) {
+        if let Some(player) = self.players.get_mut(&user) {
             // ensure the game is not progressing
             assert!(
                 matches!(
@@ -38,8 +38,11 @@ impl Session {
             );
 
             if player.game_status == GameStatus::Started {
-                self.set_game_status(&user, GameStatus::InProgress);
-                return reply!(Event::GameStarted);
+                return Self::set_status_and_reply(
+                    player,
+                    GameStatus::InProgress,
+                    Event::GameStarted,
+                );
             }
         }
 
@@ -86,25 +89,12 @@ impl Session {
             is_guessed,
         } = player.game_status.clone()
         {
-            player.increment_attempt();
-
-            if is_guessed {
-                let game_over_status = GameOverStatus::Win;
-                player.game_status = GameStatus::Completed(game_over_status.clone());
-                return reply!(Event::GameOver(game_over_status));
-            }
-
-            if player.attempts_count == MAX_ATTEMPTS {
-                let game_over_status = GameOverStatus::Lose;
-                player.game_status = GameStatus::Completed(game_over_status.clone());
-                return reply!(Event::GameOver(game_over_status));
-            }
-
-            player.game_status = GameStatus::InProgress;
-            return reply!(Event::WordChecked {
+            return Self::handle_word_checked(
+                player,
                 correct_positions,
                 contained_in_word,
-            });
+                is_guessed,
+            );
         }
 
         // Validate the submitted word is in lowercase and is 5 character long
@@ -124,30 +114,50 @@ impl Session {
             0,
         )
         .expect("Error in sending message");
-        self.set_msg_ids(&user, sent_msg_id, msg::id());
-        self.set_game_status(&user, GameStatus::CheckingWord);
+
+        player.set_msg_ids(sent_msg_id, msg::id());
+        player.game_status = GameStatus::CheckingWord;
 
         exec::wait();
     }
 
-    pub fn set_game_status(&mut self, user: &ActorId, status: GameStatus) {
-        self.players.entry(*user).and_modify(|info| {
-            info.game_status = status;
-        });
+    fn handle_word_checked(
+        player_info: &mut PlayerInfo,
+        correct_positions: Vec<u8>,
+        contained_in_word: Vec<u8>,
+        is_guessed: bool,
+    ) {
+        player_info.increment_attempt();
+
+        if is_guessed {
+            return Session::complete_game(player_info, GameOverStatus::Win);
+        }
+
+        if player_info.attempts_count == MAX_ATTEMPTS {
+            return Session::complete_game(player_info, GameOverStatus::Lose);
+        }
+
+        Self::set_status_and_reply(
+            player_info,
+            GameStatus::InProgress,
+            Event::WordChecked {
+                correct_positions,
+                contained_in_word,
+            },
+        )
     }
 
-    fn set_msg_ids(&mut self, user: &ActorId, sent_msg_id: MessageId, original_msg_id: MessageId) {
-        self.players.entry(*user).and_modify(|info| {
-            info.set_msg_ids(sent_msg_id, original_msg_id);
-        });
+    fn complete_game(info: &mut PlayerInfo, status: GameOverStatus) {
+        Self::set_status_and_reply(
+            info,
+            GameStatus::Completed(status.clone()),
+            Event::GameOver(status),
+        )
     }
 
-    pub fn get_info(&self, user: &ActorId) -> PlayerInfo {
-        let info = self
-            .players
-            .get(user)
-            .expect("Game does not exist for the player");
-        info.clone()
+    fn set_status_and_reply(info: &mut PlayerInfo, status: GameStatus, event: Event) {
+        info.game_status = status;
+        reply!(event)
     }
 }
 
@@ -179,14 +189,19 @@ extern "C" fn handle_reply() {
 
     let user: ActorId = reply_message.clone().into();
 
-    let player_info = session.get_info(&user);
+    let player_info = session
+        .players
+        .get(&user)
+        .expect("Game does not exist for the player");
+
     let sent_message_id = player_info.sent_msg_id();
     let original_message_id = player_info.original_msg_id();
 
     if reply_message_id == sent_message_id {
         let game_status: GameStatus = reply_message.into();
-
-        session.set_game_status(&user, game_status);
+        session.players.entry(user).and_modify(|info| {
+            info.game_status = game_status;
+        });
 
         exec::wake(original_message_id).expect("Failed to wake message");
     }
