@@ -7,10 +7,10 @@ use wordle_io::{Action as WordleAction, Event as WordleEvent};
 #[macro_use]
 mod macros;
 
-static mut SESSION: Option<Session> = None;
-
 const DELAY_CHECK_STATUS_DURATION: u32 = 200;
 const MAX_ATTEMPTS: u32 = 5;
+
+create_inner_state!(SESSION, Session);
 
 struct Session {
     pub target_program_id: ActorId,
@@ -154,13 +154,13 @@ impl Session {
 #[no_mangle]
 extern "C" fn init() {
     let target_program_id = msg::load().expect("Could not decode target program ID");
-    unsafe { SESSION = Some(Session::new(target_program_id)) }
+    unsafe { init_inner_state(Session::new(target_program_id)) }
 }
 
 #[no_mangle]
 extern "C" fn handle() {
     let action = msg::load::<Action>().expect("Invalid action payload");
-    let session = unsafe { SESSION.as_mut().expect("Session is not initialized") };
+    let session = get_inner_state_mut();
 
     match action {
         Action::StartGame => session.start_game(msg::source()),
@@ -173,7 +173,7 @@ extern "C" fn handle() {
 extern "C" fn handle_reply() {
     let reply_message_id = msg::reply_to().expect("Failed to query reply_to data");
 
-    let session = unsafe { SESSION.as_mut().expect("The session is not initialized") };
+    let session = get_inner_state_mut();
 
     let reply_message = msg::load::<WordleEvent>().expect("Unable to decode WordleEvent");
 
@@ -194,8 +194,7 @@ extern "C" fn handle_reply() {
 
 #[no_mangle]
 extern "C" fn state() {
-    let session = unsafe { SESSION.take().expect("Unititialized Session state") };
-    let state: State = session.into();
+    let state: State = get_inner_state().into();
     reply!(state)
 }
 
