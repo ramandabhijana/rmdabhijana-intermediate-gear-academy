@@ -4,6 +4,9 @@ use ops::Not;
 use session_io::*;
 use wordle_io::{Action as WordleAction, Event as WordleEvent};
 
+#[macro_use]
+mod macros;
+
 static mut SESSION: Option<Session> = None;
 
 const DELAY_CHECK_STATUS_DURATION: u32 = 200;
@@ -36,8 +39,7 @@ impl Session {
 
             if player.game_status == GameStatus::Started {
                 self.set_game_status(&user, GameStatus::InProgress);
-                msg::reply(Event::GameStarted, 0).expect("Error in sending reply");
-                return;
+                return reply!(Event::GameStarted);
             }
         }
 
@@ -89,27 +91,20 @@ impl Session {
             if is_guessed {
                 let game_over_status = GameOverStatus::Win;
                 player.game_status = GameStatus::Completed(game_over_status.clone());
-                msg::reply(Event::GameOver(game_over_status), 0).expect("Error in sending a reply");
-                return;
+                return reply!(Event::GameOver(game_over_status));
             }
 
             if player.attempts_count == MAX_ATTEMPTS {
                 let game_over_status = GameOverStatus::Lose;
                 player.game_status = GameStatus::Completed(game_over_status.clone());
-                msg::reply(Event::GameOver(game_over_status), 0).expect("Error in sending a reply");
-                return;
+                return reply!(Event::GameOver(game_over_status));
             }
 
             player.game_status = GameStatus::InProgress;
-            msg::reply(
-                Event::WordChecked {
-                    correct_positions,
-                    contained_in_word,
-                },
-                0,
-            )
-            .expect("Error in sending a reply");
-            return;
+            return reply!(Event::WordChecked {
+                correct_positions,
+                contained_in_word,
+            });
         }
 
         // Validate the submitted word is in lowercase and is 5 character long
@@ -200,7 +195,8 @@ extern "C" fn handle_reply() {
 #[no_mangle]
 extern "C" fn state() {
     let session = unsafe { SESSION.take().expect("Unititialized Session state") };
-    msg::reply::<State>(session.into(), 0).expect("Failed to share state");
+    let state: State = session.into();
+    reply!(state)
 }
 
 impl From<Session> for State {
