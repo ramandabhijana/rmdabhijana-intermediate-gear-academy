@@ -42,19 +42,12 @@ pub enum GameStatus {
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
 pub enum Event {
-    GameStarted {
-        user: ActorId,
-    },
+    GameStarted,
     WordChecked {
-        user: ActorId,
         correct_positions: Vec<u8>,
         contained_in_word: Vec<u8>,
     },
-    GameOver {
-        user: ActorId,
-        status: GameOverStatus,
-    },
-    MessageSent,
+    GameOver(GameOverStatus),
 }
 
 type SentMessageId = MessageId;
@@ -87,6 +80,11 @@ impl PlayerInfo {
     pub fn set_msg_ids(&mut self, sent_msg_id: SentMessageId, original_msg_id: OriginalMessageId) {
         self.msg_ids = (sent_msg_id, original_msg_id);
     }
+
+    pub fn increment_attempt(&mut self) {
+        self.attempts_count += 1;
+    }
+
 }
 
 #[derive(Debug, Default, Clone, Encode, Decode, TypeInfo)]

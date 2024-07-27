@@ -7,6 +7,7 @@ use wordle_io::{Action as WordleAction, Event as WordleEvent};
 static mut SESSION: Option<Session> = None;
 
 const DELAY_CHECK_STATUS_DURATION: u32 = 200;
+const MAX_ATTEMPTS: u32 = 5;
 
 struct Session {
     pub target_program_id: ActorId,
@@ -35,7 +36,7 @@ impl Session {
 
             if player.game_status == GameStatus::Started {
                 self.set_game_status(&user, GameStatus::InProgress);
-                msg::reply(Event::GameStarted { user }, 0).expect("Error in sending reply");
+                msg::reply(Event::GameStarted, 0).expect("Error in sending reply");
                 return;
             }
         }
@@ -64,7 +65,7 @@ impl Session {
     pub fn check_word(&mut self, user: ActorId, word: String) {
         let player = self
             .players
-            .get(&user)
+            .get_mut(&user)
             .expect("Game does not exist for the user");
 
         // Ensure the game exists and is in correct status
@@ -81,9 +82,33 @@ impl Session {
             correct_positions,
             contained_in_word,
             is_guessed,
-        } = &player.game_status
+        } = player.game_status.clone()
         {
-            // handle when got reply from target program
+            player.increment_attempt();
+
+            if is_guessed {
+                let game_over_status = GameOverStatus::Win;
+                player.game_status = GameStatus::Completed(game_over_status.clone());
+                msg::reply(Event::GameOver(game_over_status), 0).expect("Error in sending a reply");
+                return;
+            }
+
+            if player.attempts_count == MAX_ATTEMPTS {
+                let game_over_status = GameOverStatus::Lose;
+                player.game_status = GameStatus::Completed(game_over_status.clone());
+                msg::reply(Event::GameOver(game_over_status), 0).expect("Error in sending a reply");
+                return;
+            }
+
+            player.game_status = GameStatus::InProgress;
+            msg::reply(
+                Event::WordChecked {
+                    correct_positions,
+                    contained_in_word,
+                },
+                0,
+            )
+            .expect("Error in sending a reply");
             return;
         }
 
