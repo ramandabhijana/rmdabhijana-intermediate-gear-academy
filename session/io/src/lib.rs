@@ -17,7 +17,7 @@ impl Metadata for SessionMetadata {
 pub enum Action {
     StartGame,
     CheckWord { word: String },
-    CheckGameStatus { user: ActorId },
+    CheckGameStatus { user: ActorId, init_id: MessageId },
 }
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
@@ -57,6 +57,7 @@ type OriginalMessageId = MessageId;
 pub struct PlayerInfo {
     pub game_status: GameStatus,
     pub attempts_count: u32,
+    pub init_msg_id: MessageId,
     msg_ids: (SentMessageId, OriginalMessageId),
 }
 
@@ -65,6 +66,7 @@ impl PlayerInfo {
         Self {
             game_status: GameStatus::Starting,
             attempts_count: 0,
+            init_msg_id: original_msg_id,
             msg_ids: (sent_msg_id, original_msg_id),
         }
     }

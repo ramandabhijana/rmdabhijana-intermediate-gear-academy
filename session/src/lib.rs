@@ -1,5 +1,5 @@
 #![no_std]
-use gstd::{collections::BTreeMap, exec, msg, prelude::*, ActorId};
+use gstd::{collections::BTreeMap, exec, msg, prelude::*, ActorId, MessageId};
 use ops::Not;
 use session_io::*;
 use wordle_io::{Action as WordleAction, Event as WordleEvent};
@@ -56,7 +56,10 @@ impl Session {
         // Send a delayed message with `CheckGameStatus` action to monitor game's progress
         msg::send_delayed(
             exec::program_id(),
-            Action::CheckGameStatus { user },
+            Action::CheckGameStatus {
+                user,
+                init_id: original_msg_id,
+            },
             0,
             DELAY_CHECK_STATUS_DURATION,
         )
@@ -120,6 +123,31 @@ impl Session {
         exec::wait();
     }
 
+    pub fn check_game_status(&mut self, user: ActorId, init_id: MessageId) {
+        assert_eq!(
+            msg::source(),
+            exec::program_id(),
+            "Callable by program only"
+        );
+
+        let info = self
+            .players
+            .get_mut(&user)
+            .expect("Player info does not exist");
+
+        if let GameStatus::Completed(..) = info.game_status {
+            // ignore when game has ended
+            return;
+        }
+
+        if init_id == info.init_msg_id {
+            let game_over_status = GameOverStatus::Lose;
+            info.game_status = GameStatus::Completed(game_over_status.clone());
+            msg::send(user, Event::GameOver(game_over_status), 0)
+                .expect("Error in sending message");
+        }
+    }
+
     fn handle_word_checked(
         player_info: &mut PlayerInfo,
         correct_positions: Vec<u8>,
@@ -174,7 +202,7 @@ extern "C" fn handle() {
     match action {
         Action::StartGame => session.start_game(msg::source()),
         Action::CheckWord { word } => session.check_word(msg::source(), word),
-        Action::CheckGameStatus { user } => todo!(),
+        Action::CheckGameStatus { user, init_id } => session.check_game_status(user, init_id),
     }
 }
 
