@@ -1,10 +1,12 @@
 #![no_std]
+use consts::*;
 use gstd::{collections::BTreeMap, exec, msg, prelude::*, ActorId, MessageId};
 use session_io::*;
 use wordle_io::{Action as WordleAction, Event as WordleEvent};
 
 #[macro_use]
 mod macros;
+pub mod consts;
 
 const DELAY_CHECK_STATUS_DURATION: u32 = 200;
 const MAX_ATTEMPTS: u32 = 5;
@@ -27,7 +29,7 @@ impl Session {
     pub fn start_game(&mut self, user: ActorId) {
         if let Some(player) = self.players.get_mut(&user) {
             // ensure the game is not progressing
-            assert!(!player.is_playing(), "A game is in progress for this user");
+            assert!(!player.is_playing(), "{}", err_msgs::GAME_IS_PLAYING);
 
             if player.game_status == GameStatus::Started {
                 return Self::set_status_and_reply(
@@ -40,7 +42,7 @@ impl Session {
 
         // Send `StartGame` message to Wordle program
         let sent_msg_id = msg::send(self.target_program_id, WordleAction::StartGame { user }, 0)
-            .expect("Error in sending message");
+            .expect(err_msgs::SEND_FAILED);
         let original_msg_id = msg::id();
 
         self.players
@@ -56,20 +58,17 @@ impl Session {
             0,
             DELAY_CHECK_STATUS_DURATION,
         )
-        .expect("Error in sending delayed message");
+        .expect(err_msgs::SEND_DELAYED_FAILED);
 
         // Wait for the response
         exec::wait();
     }
 
     pub fn check_word(&mut self, user: ActorId, word: String) {
-        let player = self
-            .players
-            .get_mut(&user)
-            .expect("Game does not exist for the user");
+        let player = self.players.get_mut(&user).expect(err_msgs::GAME_NOT_FOUND);
 
         // Ensure the game exists and is in correct status
-        assert!(player.is_playing(), "Game is not available to play");
+        assert!(player.is_playing(), "{}", err_msgs::GAME_NOT_PLAYABLE);
 
         if let GameStatus::WordChecked {
             correct_positions,
@@ -88,11 +87,13 @@ impl Session {
         // Validate the submitted word is in lowercase and is 5 character long
         assert!(
             word.len() == wordle_io::WORD_LENGTH,
-            "Word must be 5 character long"
+            "{}",
+            err_msgs::INVALID_WORD_LEN
         );
         assert!(
             word.chars().all(|c| c.is_lowercase()),
-            "Word must be lowercased"
+            "{}",
+            err_msgs::INVALID_WORD_CASE
         );
 
         // Send `CheckWord` message to wordle program
@@ -101,7 +102,7 @@ impl Session {
             WordleAction::CheckWord { user, word },
             0,
         )
-        .expect("Error in sending message");
+        .expect(err_msgs::SEND_FAILED);
 
         player.set_msg_ids(sent_msg_id, msg::id());
         player.game_status = GameStatus::CheckingWord;
@@ -113,13 +114,14 @@ impl Session {
         assert_eq!(
             msg::source(),
             exec::program_id(),
-            "Callable by program only"
+            "{}",
+            err_msgs::PROGRAM_ONLY
         );
 
         let info = self
             .players
             .get_mut(&user)
-            .expect("Player info does not exist");
+            .expect(err_msgs::PLAYER_INFO_NOT_FOUND);
 
         if let GameStatus::Completed(..) = info.game_status {
             // ignore when game has ended
@@ -129,8 +131,7 @@ impl Session {
         if init_id == info.init_msg_id {
             let game_over_status = GameOverStatus::Lose;
             info.game_status = GameStatus::Completed(game_over_status.clone());
-            msg::send(user, Event::GameOver(game_over_status), 0)
-                .expect("Error in sending message");
+            msg::send(user, Event::GameOver(game_over_status), 0).expect(err_msgs::SEND_FAILED);
         }
     }
 
@@ -176,13 +177,13 @@ impl Session {
 
 #[no_mangle]
 extern "C" fn init() {
-    let target_program_id = msg::load().expect("Could not decode target program ID");
+    let target_program_id = msg::load().expect(err_msgs::LOAD_FAILED);
     unsafe { init_inner_state(Session::new(target_program_id)) }
 }
 
 #[no_mangle]
 extern "C" fn handle() {
-    let action = msg::load::<Action>().expect("Invalid action payload");
+    let action = msg::load::<Action>().expect(err_msgs::LOAD_FAILED);
     let session = get_inner_state_mut();
 
     match action {
@@ -194,18 +195,18 @@ extern "C" fn handle() {
 
 #[no_mangle]
 extern "C" fn handle_reply() {
-    let reply_message_id = msg::reply_to().expect("Failed to query reply_to data");
+    let reply_message_id = msg::reply_to().expect(err_msgs::READ_REPLY_FAILED);
 
     let session = get_inner_state_mut();
 
-    let reply_message = msg::load::<WordleEvent>().expect("Unable to decode WordleEvent");
+    let reply_message = msg::load::<WordleEvent>().expect(err_msgs::LOAD_FAILED);
 
     let user: ActorId = reply_message.clone().into();
 
     let player_info = session
         .players
         .get(&user)
-        .expect("Game does not exist for the player");
+        .expect(err_msgs::PLAYER_INFO_NOT_FOUND);
 
     let sent_message_id = player_info.sent_msg_id();
     let original_message_id = player_info.original_msg_id();
@@ -216,7 +217,7 @@ extern "C" fn handle_reply() {
             info.game_status = game_status;
         });
 
-        exec::wake(original_message_id).expect("Failed to wake message");
+        exec::wake(original_message_id).expect(err_msgs::RESUME_FAILED);
     }
 }
 
