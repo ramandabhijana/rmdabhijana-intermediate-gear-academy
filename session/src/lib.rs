@@ -8,9 +8,6 @@ use wordle_io::{Action as WordleAction, Event as WordleEvent};
 mod macros;
 pub mod consts;
 
-const DELAY_CHECK_STATUS_DURATION: u32 = 200;
-const MAX_ATTEMPTS: u32 = 5;
-
 create_inner_state!(SESSION, Session);
 
 struct Session {
@@ -56,7 +53,7 @@ impl Session {
                 init_id: original_msg_id,
             },
             0,
-            DELAY_CHECK_STATUS_DURATION,
+            game_rules::DELAY_CHECK_STATUS_DURATION,
         )
         .expect(err_msgs::SEND_DELAYED_FAILED);
 
@@ -147,7 +144,7 @@ impl Session {
             return Session::complete_game(player_info, GameOverStatus::Win);
         }
 
-        if player_info.attempts_count == MAX_ATTEMPTS {
+        if player_info.attempts_count == game_rules::MAX_ATTEMPTS {
             return Session::complete_game(player_info, GameOverStatus::Lose);
         }
 

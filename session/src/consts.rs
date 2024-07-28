@@ -12,3 +12,8 @@ pub mod err_msgs {
     pub const RESUME_FAILED: &str = "Error in resuming paused message";
     pub const READ_REPLY_FAILED: &str = "Error in reading replied Message ID";
 }
+
+pub mod game_rules {
+    pub const DELAY_CHECK_STATUS_DURATION: u32 = 200;
+    pub const MAX_ATTEMPTS: u32 = 5;
+}
