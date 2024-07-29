@@ -108,9 +108,8 @@ impl Session {
     }
 
     pub fn check_game_status(&mut self, user: ActorId, init_id: MessageId) {
-        assert_eq!(
-            msg::source(),
-            exec::program_id(),
+        assert!(
+            msg::source() == exec::program_id(),
             "{}",
             err_msgs::PROGRAM_ONLY
         );
