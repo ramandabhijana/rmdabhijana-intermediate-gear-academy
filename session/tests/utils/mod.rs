@@ -14,6 +14,7 @@ pub const WRONG_ANSWER: &str = "human"; // item at index 0 or 1 in `BANK_OF_WORD
 pub const CORRECT_ANSWER: &str = "horse"; // item at index 2 in `BANK_OF_WORDS` is the correct answer
 
 pub struct ProgramPair<'a> {
+    #[allow(dead_code)]
     pub target_program: Program<'a>,
     pub proxy_program: Program<'a>,
 }
