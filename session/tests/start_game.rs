@@ -28,7 +28,7 @@ fn start_game_should_success_when_first_time() {
     // - User is registered in the game
     // - User's info is valid
     let State { players, .. } = proxy_program.read_state(0).unwrap();
-    assert!(!players.contains_key(&USER.into()));
+    assert!(players.contains_key(&USER.into()));
 
     let info = players.get(&USER.into()).unwrap();
     assert_eq!(info.game_status, GameStatus::InProgress);
