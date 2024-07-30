@@ -37,7 +37,7 @@ fn check_game_status_should_fail_when_called_by_other_actor() {
         "expected log payload: {:?}",
         final_panic_message(PROGRAM_ONLY)
     );
-    println!(
+    panic!(
         "result's log: {:?}",
         String::from_utf8(result.log()[0].payload().to_vec()).unwrap()
     );
