@@ -15,10 +15,11 @@ fn check_game_status_should_fail_when_called_by_other_actor() {
     let proxy_program = init_programs(&system).proxy_program;
 
     // When: A user send action to check game status
+    let user_id = 999u64;
     let result = proxy_program.send(
-        USER,
+        user_id,
         Action::CheckGameStatus {
-            user: USER.into(),
+            user: user_id.into(),
             init_id: MessageId::zero(),
         },
     );
@@ -26,9 +27,10 @@ fn check_game_status_should_fail_when_called_by_other_actor() {
     // Then: Program reverts with appropriate error message
     let log = Log::builder()
         .source(PROXY_PROGRAM)
-        .dest(USER)
+        .dest(user_id)
         .payload_bytes(final_panic_message(PROGRAM_ONLY));
-    assert!(result.main_failed() && result.contains(&log));
+    assert!(result.main_failed());
+    assert!(result.contains(&log));
 }
 
 #[test]
