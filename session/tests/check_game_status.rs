@@ -27,7 +27,7 @@ fn check_game_status_should_fail_when_called_by_other_actor() {
     let log = Log::builder()
         .source(PROXY_PROGRAM)
         .dest(USER)
-        .payload_bytes(&final_panic_message(PROGRAM_ONLY));
+        .payload_bytes(final_panic_message(PROGRAM_ONLY));
     assert!(result.main_failed() && result.contains(&log));
 }
 

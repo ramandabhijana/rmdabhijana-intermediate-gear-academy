@@ -116,9 +116,9 @@ pub struct State {
     pub players: BTreeMap<ActorId, PlayerInfo>,
 }
 
-impl Into<GameStatus> for WordleEvent {
-    fn into(self) -> GameStatus {
-        match self {
+impl From<WordleEvent> for GameStatus {
+    fn from(event: WordleEvent) -> Self {
+        match event {
             WordleEvent::GameStarted { .. } => GameStatus::Started,
             WordleEvent::WordChecked {
                 correct_positions,

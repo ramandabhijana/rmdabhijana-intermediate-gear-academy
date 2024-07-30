@@ -12,7 +12,7 @@ fn start_game_should_success_when_first_time() {
 
     // Given: User has never started a game
     let State { players, .. } = proxy_program.read_state(0).unwrap();
-    assert!(players.get(&USER.into()).is_none());
+    assert!(!players.contains_key(&USER.into()));
 
     // When: User starts a game
     let result = proxy_program.send(USER, Action::StartGame);
@@ -28,7 +28,7 @@ fn start_game_should_success_when_first_time() {
     // - User is registered in the game
     // - User's info is valid
     let State { players, .. } = proxy_program.read_state(0).unwrap();
-    assert!(players.get(&USER.into()).is_some());
+    assert!(!players.contains_key(&USER.into()));
 
     let info = players.get(&USER.into()).unwrap();
     assert_eq!(info.game_status, GameStatus::InProgress);
@@ -53,7 +53,7 @@ fn start_game_should_fail_when_player_is_in_game() {
     let log = Log::builder()
         .source(PROXY_PROGRAM)
         .dest(USER)
-        .payload_bytes(&final_panic_message(GAME_IS_PLAYING));
+        .payload_bytes(final_panic_message(GAME_IS_PLAYING));
     assert!(result.main_failed() && result.contains(&log));
 }
 

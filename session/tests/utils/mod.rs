@@ -24,7 +24,7 @@ pub fn init_system() -> System {
     system
 }
 
-pub fn init_programs<'a>(sys: &'a System) -> ProgramPair<'a> {
+pub fn init_programs(sys: &System) -> ProgramPair<'_> {
     let proxy_program = Program::current(sys);
     let target_program =
         ProgramBuilder::from_file("../target/wasm32-unknown-unknown/debug/wordle.opt.wasm")

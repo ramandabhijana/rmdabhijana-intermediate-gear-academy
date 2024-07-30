@@ -70,7 +70,7 @@ fn check_word_should_fail_when_not_playing() {
     let log = Log::builder()
         .source(PROXY_PROGRAM)
         .dest(USER)
-        .payload_bytes(&final_panic_message(GAME_NOT_PLAYABLE));
+        .payload_bytes(final_panic_message(GAME_NOT_PLAYABLE));
     assert!(result.main_failed() && result.contains(&log));
 }
 
@@ -97,7 +97,7 @@ fn check_word_should_fail_when_invalid_length() {
     let log = Log::builder()
         .source(PROXY_PROGRAM)
         .dest(USER)
-        .payload_bytes(&final_panic_message(INVALID_WORD_LEN));
+        .payload_bytes(final_panic_message(INVALID_WORD_LEN));
     assert!(result.main_failed() && result.contains(&log));
 }
 
@@ -124,7 +124,7 @@ fn check_word_should_fail_when_not_lowercased() {
     let log = Log::builder()
         .source(PROXY_PROGRAM)
         .dest(USER)
-        .payload_bytes(&final_panic_message(INVALID_WORD_CASE));
+        .payload_bytes(final_panic_message(INVALID_WORD_CASE));
     assert!(result.main_failed() && result.contains(&log));
 }
 
