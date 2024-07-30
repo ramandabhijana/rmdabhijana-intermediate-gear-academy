@@ -46,7 +46,8 @@ pub fn init_programs(sys: &System) -> ProgramPair<'_> {
 
 // https://docs.rs/gstd/latest/gstd/#panic-handler-profiles
 pub fn final_panic_message(message: &str) -> String {
-    format!("Panic occurred: panicked with '{message}'")
+    println!("Reverts with: {message}");
+    "Panic occurred: panicked with '<unknown>'".into()
 }
 
 #[allow(unused)]
