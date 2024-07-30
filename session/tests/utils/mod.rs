@@ -1,10 +1,17 @@
 use gstd::ActorId;
 use gtest::{Program, ProgramBuilder, System};
+use session_io::Event;
 
 pub const PROXY_PROGRAM: u64 = 1;
 pub const TARGET_PROGRAM: u64 = 2;
 
 pub const USER: u64 = 3;
+
+#[allow(unused)]
+pub const WRONG_ANSWER: &str = "human"; // item at index 0 or 1 in `BANK_OF_WORDS` is the wrong answer
+
+#[allow(unused)]
+pub const CORRECT_ANSWER: &str = "horse"; // item at index 2 in `BANK_OF_WORDS` is the correct answer
 
 pub struct ProgramPair<'a> {
     pub target_program: Program<'a>,
@@ -39,4 +46,43 @@ pub fn init_programs<'a>(sys: &'a System) -> ProgramPair<'a> {
 // https://docs.rs/gstd/latest/gstd/#panic-handler-profiles
 pub fn final_panic_message(message: &str) -> String {
     format!("Panic occurred: panicked with '{message}'")
+}
+
+#[allow(unused)]
+pub fn word_checked_on_wrong_answer_event() -> Event {
+    use gstd::collections::HashSet;
+
+    let mut correct_positions: Vec<u8> = Vec::new();
+    let mut contained_in_word: Vec<u8> = Vec::new();
+    let mut used_indices = HashSet::new();
+
+    for (i, (s_char, u_char)) in CORRECT_ANSWER.chars().zip(WRONG_ANSWER.chars()).enumerate() {
+        if s_char == u_char {
+            correct_positions.push(i.try_into().unwrap());
+            used_indices.insert(i);
+        }
+    }
+
+    for (i, u_char) in WRONG_ANSWER.chars().enumerate() {
+        if !used_indices.contains(&i) && CORRECT_ANSWER.contains(u_char) {
+            let mut added = false;
+            for (j, s_char) in CORRECT_ANSWER.chars().enumerate() {
+                if s_char == u_char && !used_indices.contains(&j) {
+                    contained_in_word.push(i.try_into().unwrap());
+                    used_indices.insert(j);
+                    added = true;
+                    break;
+                }
+            }
+            let i: u8 = i.try_into().unwrap();
+            if !added && !correct_positions.contains(&i) && !contained_in_word.contains(&i) {
+                contained_in_word.push(i);
+            }
+        }
+    }
+
+    Event::WordChecked {
+        correct_positions,
+        contained_in_word,
+    }
 }

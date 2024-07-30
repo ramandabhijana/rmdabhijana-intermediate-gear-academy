@@ -117,7 +117,7 @@ fn consume_all_attempts_with_wrong_answers(program: &Program) {
         program.send(
             USER,
             Action::CheckWord {
-                word: "human".into(),
+                word: WRONG_ANSWER.into(),
             },
         );
     }
