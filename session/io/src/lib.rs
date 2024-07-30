@@ -27,16 +27,31 @@ pub enum GameOverStatus {
 }
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
+/// Represents the various statuses that a game can have.
 pub enum GameStatus {
+    /// The game is in the initial state and is about to start.
     Starting,
+    /// The game has started and is ready to be played.
     Started,
+    /// The game is in the process of checking a submitted word.
     CheckingWord,
+    /// The status after a word has been checked.
+    ///
+    /// # Fields
+    /// - `correct_positions`: A vector of positions (indices) where the guessed letters match exactly.
+    /// - `contained_in_word`: A vector of positions where the guessed letters are present in the word but in different positions.
+    /// - `is_guessed`: A boolean indicating whether the word has been correctly guessed.
     WordChecked {
         correct_positions: Vec<u8>,
         contained_in_word: Vec<u8>,
         is_guessed: bool,
     },
+    /// The game is ongoing and has not yet reached a conclusion.
     InProgress,
+    /// The game has concluded.
+    ///
+    /// # Fields
+    /// - `GameOverStatus`: Indicates whether the game ended in a win or a loss.
     Completed(GameOverStatus),
 }
 
