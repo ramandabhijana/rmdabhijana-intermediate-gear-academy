@@ -25,22 +25,12 @@ fn check_game_status_should_fail_when_called_by_other_actor() {
     );
 
     // Then: Program reverts with appropriate error message
-    let _log = Log::builder()
+    let log = Log::builder()
         .source(PROXY_PROGRAM)
         .dest(user_id)
         .payload_bytes(final_panic_message(PROGRAM_ONLY));
     assert!(result.main_failed());
-
-    // Works on my local machine but keep failing on the CI 🤷‍♂️
-    // assert!(result.contains(&log));
-    println!(
-        "expected log payload: {:?}",
-        final_panic_message(PROGRAM_ONLY)
-    );
-    panic!(
-        "result's log: {:?}",
-        String::from_utf8(result.log()[0].payload().to_vec()).unwrap()
-    );
+    assert!(result.contains(&log));
 }
 
 #[test]
