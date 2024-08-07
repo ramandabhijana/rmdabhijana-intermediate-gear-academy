@@ -2192,7 +2192,6 @@ name = "gstd"
 version = "1.4.1"
 source = "git+https://github.com/gear-tech/gear.git?tag=v1.4.1#a25a431f1575d4702fc9a5769a9b934c621c4d09"
 dependencies = [
- "arrayvec 0.7.4",
  "const_format",
  "futures",
  "galloc",
@@ -3875,6 +3874,7 @@ dependencies = [
  "gstd",
  "gtest",
  "session-io",
+ "wordle-io",
 ]
 
 [[package]]
@@ -3885,6 +3885,7 @@ dependencies = [
  "gstd",
  "parity-scale-codec",
  "scale-info",
+ "wordle-io",
 ]
 
 [[package]]

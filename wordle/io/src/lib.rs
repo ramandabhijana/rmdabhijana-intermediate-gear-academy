@@ -29,3 +29,14 @@ pub enum Event {
         contained_in_word: Vec<u8>,
     },
 }
+
+pub const WORD_LENGTH: usize = 5;
+
+impl From<Event> for ActorId {
+    fn from(event: Event) -> Self {
+        match event {
+            Event::GameStarted { user } => user,
+            Event::WordChecked { user, .. } => user,
+        }
+    }
+}

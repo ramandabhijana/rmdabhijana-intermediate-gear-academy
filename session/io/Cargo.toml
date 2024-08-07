@@ -5,6 +5,7 @@ edition.workspace = true
 publish.workspace = true
 
 [dependencies]
+wordle-io.workspace = true
 gstd.workspace = true
 gmeta.workspace = true
 parity-scale-codec.workspace = true
